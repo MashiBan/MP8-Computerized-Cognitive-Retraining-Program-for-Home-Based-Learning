@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+
+model IQCategory {
+  id         Int         @id @default(autoincrement())
+  name       String
+  students   Student[]   // Many students can belong to one IQCategory
+  milestones Milestone[] // Many milestones may belong to an IQCategory
+}
+
+model Milestone {
+  id           Int        @id @default(autoincrement())
+  iqCategoryId Int
+  name         String
+  iqCategory   IQCategory @relation(fields: [iqCategoryId], references: [id])
+  questions    Question[]
+  studentProgress StudentProgress[]
+}
+
+model Question {
+  id            Int       @id @default(autoincrement())
+  questionText  String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String    // This can be 'A', 'B', 'C', or 'D'
+  milestoneId   Int
+  iqCategoryId  Int
+  milestone     Milestone @relation(fields: [milestoneId], references: [id])
+}
+
+model StudentProgress {
+  id          Int        @id @default(autoincrement())
+  studentId   Int
+  milestoneId Int
+  progress    Int
+  student     Student    @relation(fields: [studentId], references: [id])
+  milestone   Milestone  @relation(fields: [milestoneId], references: [id])
+}
+
+model Student {
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  iqCategoryId  Int
+  iqCategory    IQCategory @relation(fields: [iqCategoryId], references: [id])
+  progress      StudentProgress[]
+}
