@@ -1,164 +1,279 @@
-import express from 'express'
-import { PrismaClient } from '@prisma/client'
-import cors from 'cors'
-import nodemailer from 'nodemailer'
-import { parse } from 'dotenv';
+import express from 'express';
+import bodyParser from 'body-parser';
+import { PrismaClient } from '@prisma/client';
+import cors from 'cors';
 
-const app=express();
-const port=3001
-app.use(express.json())
-const prisma=new PrismaClient()
-app.use(cors())
+const prisma = new PrismaClient();
+const app = express();
+const port = 3000;
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER, // 📩 Sender Gmail
-    pass: process.env.EMAIL_PASS, // 🔑 App Password
-  },
+app.use(bodyParser.json());
+app.use(cors());
+
+// Signup Route
+app.post('/signup', async (req, res) => {
+  const { name, email, role } = req.body;
+
+  if (!['STUDENT', 'TEACHER'].includes(role)) {
+    return res.status(400).json({ message: 'Invalid role. Must be STUDENT or TEACHER.' });
+  }
+
+  try {
+    const existingUser = await prisma.student.findUnique({ where: { email } });
+
+    if (existingUser) {
+      return res.status(409).json({ message: 'Email already exists' });
+    }
+
+    const newUser = await prisma.student.create({
+      data: {
+        name,
+        email,
+        role,
+      }
+    });
+
+    res.status(201).json({ message: 'Signup successful', user: newUser });
+  } catch (error) {
+    console.error('Signup Error:', error);
+    res.status(500).json({ message: 'Internal server error during signup' });
+  }
 });
 
 
-app.get('/',(req,res)=>{
-    res.send('Hello from backend');
-})
-// fetching milestones
-app.get('/:iqCategoryId/milestone',async(req,res)=>{
-    const {iqCategoryId}=req.params;
-    const iq=parseInt(iqCategoryId)
+app.get('/milestones', async (req, res) => {
     try {
-        const milestones=await prisma.milestone.findMany({
-            where:{iqCategoryId:iq}
-        })
-        res.json(milestones);
-    } catch (error) {
-        res.status(500).json({error:error})
-    }
-})
-
-
-// fetching questions
-app.get('/questions/:iqCategoryId/:milestoneId',async(req,res)=>{
-    const {iqCategoryId,milestoneId}=req.params
-    try {
-        const questions=await prisma.question.findMany({
-            where:{
-                iqCategoryId: parseInt(iqCategoryId),
-                milestoneId: parseInt(milestoneId),
-            },
-        })
-        res.json(questions);
-    } catch (error) {
-        res.status(500).json({error:'failed to fetch questions'});
-    }
-})
-// fetching user
-app.post('/login',async(req,res)=>{
-    const {name,email}=req.body;
-    try {
-        const user=await prisma.student.findUnique({
-            where:{email:email}
-        })
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-          }
-      
-          const iqCategory = user.iqCategoryId;
-          const id=user.id;
-          const name=user.name
-          return res.status(200).json({ iqCategory,id,name,email });
-        } catch (error) {
-          console.error(error);
-          res.status(500).json({ message: 'Something went wrong, please try again later' });
-        }
-})
-
-// post socres
-app.post('/submit-exam', async (req, res) => {
-    const { iqcategory,studentId, milestoneId, score,warnings,email } = req.body;
-  
-    try {
-      // Check if a progress record already exists for the student and milestone
-      const existingProgress = await prisma.studentProgress.findFirst({
-        where: { studentId: parseInt(studentId), milestoneId: parseInt(milestoneId) },
-      });
-  
-      if (existingProgress) {
-        // If progress exists, update the score
-        await prisma.studentProgress.update({
-          where: { id: existingProgress.id },
-          data: { progress: score },
-        });
-      } else {
-        // If no progress exists, create a new record
-        await prisma.studentProgress.create({
-          data: {
-            studentId: parseInt(studentId),
-            milestoneId: parseInt(milestoneId),
-            progress: parseInt(score),
-          },
-        });
-      }
-      const mailOptions = {
-        from: process.env.EMAIL_USER, // Sender Email
-        to: email, // Student's Email (recipient)
-        subject: `Milestone ${milestoneId} Quiz Results of ${iqcategory} Exam`,
-        html: `
-          <h2>Quiz Results for Milestone ${milestoneId}</h2>
-          <p><strong>Score:</strong> ${score}</p>
-          <h3>Warnings Received:</h3>
-          <ul>
-            ${warnings.map((warning) => `<li>${warning}</li>`).join("")}
-          </ul>
-          <p>All the best for your next exam!</p>
-        `,
-      };
-  
-      // 🚀 Send the email
-      await transporter.sendMail(mailOptions);
-      console.log("Email sent successfully!");
-  
-      res.status(200).json({ message: 'Exam submitted successfully', score });
-    } catch (error) {
-      console.error('Error submitting exam:', error);
-      res.status(500).json({ error: 'Error submitting exam results' });
-    }
-  });
-
-// fetching scores
-app.get('/student-progress/:studentId', async (req, res) => {
-    try {
-      const studentId = parseInt(req.params.studentId);
-  
-      // Fetch all student progress records along with related milestone IQ category
-      const progressData = await prisma.studentProgress.findMany({
-        where: { studentId },
+      const milestones = await prisma.milestone.findMany({
         include: {
-          milestone: {
-            select: {
-              iqCategory: true,  // Fetch IQ category from related milestone
-            }
-          },
-        }, // Order by submission date
+          iqCategory: true,
+          questions: true,
+        },
       });
   
-      // Calculate the average score directly from all milestones
-      const totalProgress = progressData.reduce((sum, { progress }) => sum + progress, 0);
-      const averageProgress = totalProgress / progressData.length;
-  
-      res.status(200).json({
-    
-        averageProgress: parseFloat(averageProgress.toFixed(2)),  // Round to 2 decimal places
-      });
+      res.json(milestones);
     } catch (error) {
-      console.error('Error fetching progress:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      console.error("Error fetching all milestones:", error);
+      res.status(500).json({ message: "Failed to fetch milestones" });
+    }
+  });
+
+  // Get All Milestones (for teacher view)
+app.get('/teacher/milestones', async (req, res) => {
+    try {
+      const milestones = await prisma.milestone.findMany({
+        include: {
+          iqCategory: true,
+          questions: true,
+        },
+      });
+  
+      res.json(milestones);
+    } catch (error) {
+      console.error("Error fetching all milestones:", error);
+      res.status(500).json({ message: "Failed to fetch milestones" });
     }
   });
   
+
+  app.get('/students', async (req, res) => {
+    try {
+      const students = await prisma.student.findMany({
+        include: {
+          iqCategory: true,
+          progress: true,
+        },
+      });
+      res.json(students);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Failed to fetch students' });
+    }
+  });
+  
+// Get Milestones for a User
+app.get('/:userId/milestone', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const milestones = await prisma.milestone.findMany({
+      where: {
+        studentProgress: {
+          some: {
+            studentId: parseInt(userId),
+          },
+        },
+      },
+      include: {
+        iqCategory: true,
+        questions: true,
+      },
+    });
+
+    if (milestones.length === 0) {
+      return res.status(404).json({ message: "No milestones found for this user" });
+    }
+
+    res.json(milestones);
+  } catch (error) {
+    console.error("Error fetching milestones:", error);
+    res.status(500).json({ message: "Something went wrong", error: error.message });
+  }
+});
+
+// Get Questions
+app.get("/questions/:iqcategory/:milestoneId", async (req, res) => {
+  const { iqcategory, milestoneId } = req.params;
+
+  try {
+    const questions = await prisma.question.findMany({
+      where: {
+        iqCategoryId: parseInt(iqcategory),
+        milestoneId: parseInt(milestoneId),
+      },
+    });
+
+    res.json(questions);
+  } catch (error) {
+    console.error("Error fetching questions:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Submit Exam
+app.post('/submit-exam', async (req, res) => {
+  try {
+    const { studentId, milestoneId, progress } = req.body;
+
+    if (!studentId || !milestoneId || progress === undefined) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    const result = await prisma.studentProgress.create({
+      data: {
+        studentId: parseInt(studentId),
+        milestoneId: parseInt(milestoneId),
+        progress: progress,
+      },
+    });
+
+    res.status(201).json(result);
+  } catch (error) {
+    console.error("Error submitting exam:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+
+// Create a new Milestone
+app.post('/milestones', async (req, res) => {
+    const { name, iqCategoryId } = req.body;
+  
+    // Validation for required fields
+    if (!name || !iqCategoryId) {
+      return res.status(400).json({ message: "Missing required fields: 'name' and 'iqCategoryId'" });
+    }
+  
+    try {
+      const newMilestone = await prisma.milestone.create({
+        data: {
+          name,
+          iqCategoryId: parseInt(iqCategoryId),
+        },
+      });
+      res.status(201).json({ message: "Milestone created successfully", milestone: newMilestone });
+    } catch (error) {
+      console.error('Error creating milestone:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+
+
+// Route to Save a Question
+app.post('/questions', async (req, res) => {
+    try {
+      const { questionText, optionA, optionB, optionC, optionD, correctAnswer, milestoneId } = req.body;
+  
+      // Ensure required fields are present
+      if (!questionText || !optionA || !optionB || !optionC || !optionD || !correctAnswer || !milestoneId) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
+  
+      // Insert into the database (example using Prisma)
+      const question = await prisma.question.create({
+        data: {
+          questionText,
+          optionA,
+          optionB,
+          optionC,
+          optionD,
+          correctAnswer,
+          milestoneId,
+          iqCategoryId: 1,
+        },
+      });
+  
+      res.status(200).json({ success: true, question });
+    } catch (error) {
+      console.error('Error adding question:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
   
 
   
-app.listen(port,(()=>{
-    console.log('app is liestening on the port 3001');
-}))
+
+// Get Student Progress
+app.get("/student-progress/:id", async (req, res) => {
+    const { id } = req.params;
+  
+    const studentId = parseInt(id, 10);
+    if (isNaN(studentId)) {
+      return res.status(400).json({ error: "Invalid student ID" });
+    }
+  
+    try {
+      const progress = await prisma.studentProgress.findMany({
+        where: { studentId },
+        orderBy: { id: 'desc' },
+        take: 1,
+      });
+  
+      if (!progress.length) {
+        return res.status(404).json({ error: "No progress found" });
+      }
+  
+      const lastProgress = progress[0];
+      
+      // Instead of returning score, return full progress object
+      res.json({ progress: lastProgress });
+    } catch (error) {
+      console.error("🔥 Error fetching progress:", error);
+      res.status(500).json({ error: "Failed to fetch progress" });
+    }
+  });
+  
+
+// Login Route (Dummy)
+app.post('/login', async (req, res) => {
+  try {
+    const { email, name, role } = req.body;
+
+    res.json({
+      message: 'Login successful',
+      id: 1,
+      name,
+      email,
+      iqCategory: '1',
+      role
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`🚀 Server is running at http://localhost:${port}`);
+});

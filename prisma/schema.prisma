@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -13,13 +9,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
-
 model IQCategory {
   id         Int         @id @default(autoincrement())
   name       String
   students   Student[]   // Many students can belong to one IQCategory
+  teachers   Teacher[]   // Many teachers can belong to one IQCategory
   milestones Milestone[] // Many milestones may belong to an IQCategory
 }
 
@@ -61,4 +55,18 @@ model Student {
   iqCategoryId  Int
   iqCategory    IQCategory @relation(fields: [iqCategoryId], references: [id])
   progress      StudentProgress[]
+  role          Role      @default(STUDENT)  // <-- added the role field
+}
+
+model Teacher {
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  iqCategoryId  Int
+  iqCategory    IQCategory @relation(fields: [iqCategoryId], references: [id])
+}
+
+enum Role {
+  STUDENT
+  TEACHER
 }
