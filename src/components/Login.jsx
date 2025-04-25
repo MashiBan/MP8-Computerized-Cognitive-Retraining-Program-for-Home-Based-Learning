@@ -4,21 +4,23 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState('student'); // default role
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-    const navigate=useNavigate()
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/login', {
+      const response = await fetch('https://cognitive-backend-current.onrender.com/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, name }),
+        body: JSON.stringify({ email, name, role }),
       });
 
       const data = await response.json();
@@ -29,16 +31,21 @@ const Login = () => {
         return;
       }
 
-      // Store IQ category in localStorage
-      localStorage.setItem('iqCategory', data.iqCategory);
-      localStorage.setItem('studentId', data.id);
-      localStorage.setItem('student',data.name);
-      localStorage.setItem('email',data.email);
-      // Redirect user to the next page
-      navigate('/home') 
+      // Store user info
+      localStorage.setItem('role', role);
+      localStorage.setItem('email', data.email || '');
+      localStorage.setItem('name', data.name || '');
+      localStorage.setItem('id', data.id || '');
+      if (role === 'student') {
+        localStorage.setItem('iqCategory', data.iqCategory || '');
+        navigate('/home');
+      } else {
+        navigate('/admin');
+      }
 
     } catch (error) {
       setError('An error occurred, please try again later');
+    } finally {
       setLoading(false);
     }
   };
@@ -54,7 +61,7 @@ const Login = () => {
         )}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="text" className="block text-sm font-medium text-gray-700">Name</label>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
             <input
               type="text"
               id="name"
@@ -65,16 +72,29 @@ const Login = () => {
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
             <input
               type="email"
-              id="eamil"
+              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
+          </div>
+
+          <div className="mb-6">
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">Login As</label>
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="student">Student</option>
+              <option value="teacher">Teacher</option>
+            </select>
           </div>
 
           <button

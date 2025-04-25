@@ -4,9 +4,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import * as tf from "@tensorflow/tfjs";
 import * as blazeface from "@tensorflow-models/blazeface";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
+import GlobalButton from '../GlobalButton.jsx';
 
 const Questions = () => {
-  const studentId = localStorage.getItem("studentId");
+  const studentId = localStorage.getItem("id");
   const email=localStorage.getItem('email')
   const iqcategory=localStorage.getItem("iqCategory");
   const { milestoneId } = useParams();
@@ -37,7 +38,7 @@ const Questions = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/questions/${iqcategory}/${milestoneId}`);
+        const response = await fetch(`https://cognitive-backend-current.onrender.com/questions/${iqcategory}/${milestoneId}`);
         const data = await response.json();
         setQuestions(data);
       } catch (error) {
@@ -118,14 +119,20 @@ const Questions = () => {
   const checkAns = (e, ans, questionId) => {
     if (!lock) {
       const currentQuestion = questions.find((q) => q.id === questionId);
-
-      if (currentQuestion.correctAnswer === ans) {
+  
+      // Check if the selected answer is correct
+      const isCorrect = currentQuestion.correctAnswer === ans;
+  
+      // Update the score
+      if (isCorrect) {
         e.target.classList.add("correct");
-        setLock(true);
-        setScore((prevScore) => prevScore + 1);
+        setScore((prevScore) => {
+          const newScore = prevScore + (isCorrect ? 1 : 0);
+          console.log("Updated score:", newScore);
+          return newScore;
+        });
       } else {
         e.target.classList.add("wrong");
-        setLock(true);
         const correctOption = optionArray.find(
           (option) => option.current.innerText === currentQuestion.correctAnswer
         );
@@ -133,6 +140,13 @@ const Questions = () => {
           correctOption.current.classList.add("correct");
         }
       }
+  
+      // Calculate and update progress based on score
+      const progress = ((score + (isCorrect ? 1 : 0)) / questions.length) * 100; // Progress in percentage
+      setProgressWidth(progress); // Update the progress visually
+  
+      // Lock state to prevent multiple selections
+      setLock(true);
     }
   };
 
@@ -153,13 +167,16 @@ const Questions = () => {
 
   const handleSubmit = async () => {
     try {
-      await fetch("http://localhost:3001/submit-exam", {
+      await fetch("https://cognitive-backend-current.onrender.com/submit-exam", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ iqcategory,studentId, milestoneId, score,warnings:[warning],email }),
+        body: JSON.stringify({
+          studentId,
+          milestoneId,
+          progress: progressWidth, // Send the final score as progress
+        }),
       });
-     
-
+  
       const isPassed = score >= questions.length / 2;
       const nextMilestone = parseInt(milestoneId) + 1;
       if (isPassed) {
@@ -167,14 +184,28 @@ const Questions = () => {
       } else {
         showNotification(`❌ You failed the Quiz, Try again!`);
       }
+  
+      // Stop webcam after quiz
       if (videoRef.current && videoRef.current.srcObject) {
         let tracks = videoRef.current.srcObject.getTracks();
-        tracks.forEach(track => track.stop()); // Stop all tracks (video & audio)
-        videoRef.current.srcObject = null; // Clear the video source
+        tracks.forEach(track => track.stop());
+        videoRef.current.srcObject = null;
       }
+  
       setIsWebcamActive(false);
+
+      const getUserRole = () => {
+        return localStorage.getItem('role'); // Assuming 'role' is stored in localStorage
+      };
+  
       setTimeout(() => {
-        navigate("/home");
+        const role = getUserRole(); // You need a function that gets the user's role, e.g., from context, localStorage, or API.
+        
+        if (role === "teacher") {
+          navigate("/admin");  // Navigate to /admin if the role is teacher
+        } else {
+          navigate("/home");   // Navigate to /home if the role is not teacher
+        }
       }, 3000);
     } catch (error) {
       console.error("Error submitting exam:", error);
@@ -204,7 +235,10 @@ const Questions = () => {
         )}
 
         {result ? (
-          <button onClick={handleSubmit}>Check Answer</button>
+          // <button onClick={handleSubmit}>Check Answer</button>
+          <GlobalButton onClick={handleSubmit} tooltipText="Check the answer of the questions">
+          Check Answer
+        </GlobalButton>
         ) : (
           <>
             {questions.length > 0 && (

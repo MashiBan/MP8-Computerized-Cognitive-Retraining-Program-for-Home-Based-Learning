@@ -2,32 +2,34 @@ import React, { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { FaBook, FaCalendarAlt, FaFileAlt, FaUser, FaSearch } from 'react-icons/fa';
 import MyCalendar from './MyCalendar';
+import GlobalButton from './GlobalButton';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
-  const studentId=localStorage.getItem('studentId')
+  const studentId=localStorage.getItem('id')
     const [studentScore, setStudentScore] = useState(0);
 
     useEffect(() => {
-      const postScore=async()=>{
-        try {
-          const response=await fetch(`http://localhost:3001/student-progress/${studentId}`,{
-            method:'GET',
-            headers:{
-              "Content-Type":"application/json"
-            }
-          })
-          const data=await response.json()
-          console.log(data)
-
-          console.log(studentScore)
-          setStudentScore(data.averageProgress)
-        } catch (error) {
-          alert(error)
-        }
-      }
-      postScore();
-    }, []);
+        const postScore = async () => {
+          try {
+            const response = await fetch(`https://cognitive-backend-current.onrender.com/student-progress/${studentId}`, {
+              method: 'GET',
+              headers: {
+                "Content-Type": "application/json"
+              }
+            });
+            const data = await response.json();
+            console.log("🚀 Full response:", data);
+      
+            // Set score from nested progress object
+            setStudentScore(data.progress.progress);
+          } catch (error) {
+            alert(error);
+          }
+        };
+        postScore();
+      }, []);
+      
 
     const chartData = [
         { name: "Scored", value: studentScore },
@@ -43,13 +45,16 @@ const Home = () => {
                 <h2 className="text-2xl font-bold mb-6">My Studies</h2>
                 <nav className="space-y-4">
                     <Link to="/dashboard" className="flex items-center space-x-2 hover:text-gray-300">
-                        <FaBook /> <span>Dashboard</span>
+                        <FaBook /> <span><GlobalButton tooltipText={"To go to dashboard, press"}>Dashboard</GlobalButton></span>
                     </Link>
                     <Link to="/milestones" className="flex items-center space-x-2 hover:text-gray-300">
-                        <FaFileAlt /> <span>Milestones</span>
+                        <FaFileAlt /> <span><GlobalButton tooltipText={"To go to Milestone, press"} >Milestones</GlobalButton></span>
                     </Link>
                     <Link to="/analytics" className="flex items-center space-x-2 hover:text-gray-300">
                         <FaCalendarAlt /> <span>Analytics</span>
+                    </Link>
+                    <Link to="/" className="flex items-center space-x-2 hover:text-gray-300">
+                        <FaCalendarAlt /> <span><GlobalButton tooltipText={"To Logout from platform, press"} >Logout</GlobalButton></span>
                     </Link>
                 </nav>
             </div>
@@ -67,7 +72,10 @@ const Home = () => {
                     </div>
                 </div>
 
-                <p className="text-gray-600 mt-2">Your current score average is {studentScore  || 0}%  <span className="text-blue-600">Lets work together</span></p>
+                <p className="text-gray-600 mt-2">
+  Your current score average is {(Number(studentScore) || 0).toFixed(2)}%  
+  <span className="text-blue-600"> Let's work together</span>
+</p>
 
                 <div className="grid grid-cols-3 gap-6 mt-6">
                     {/* Student Score Chart */}

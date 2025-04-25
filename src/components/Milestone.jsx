@@ -9,26 +9,28 @@ const Milestone = () => {
   useEffect(() => {
     const fetchMilestones = async () => {
       try {
-        const response = await fetch("http://localhost:3001/1/milestone", {
+        const response = await fetch("https://cognitive-backend-current.onrender.com/1/milestone", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
         });
-
+  
         if (!response.ok) {
           throw new Error("Something went wrong");
         }
-
+  
         const data = await response.json();
         setMilestones(data);
       } catch (error) {
+        console.error("Error fetching milestones:", error);
         alert(error.message);
       }
     };
-
+  
     fetchMilestones();
-  }, []); // Runs only once on component mount
+  }, []);
+  ; // Runs only once on component mount
 
   return (
     <>
