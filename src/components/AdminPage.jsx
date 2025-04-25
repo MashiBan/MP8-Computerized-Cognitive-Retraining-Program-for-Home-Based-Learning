@@ -116,7 +116,7 @@ const AdminPage = () => {
             <FaChalkboardTeacher /><span><GlobalButton tooltipText={"to open the dashboard press"}>Dashboard</GlobalButton></span>
           </Link>
           <Link to="/teacher/milestones" className="flex items-center space-x-2 hover:text-gray-300">
-            <FaFileAlt /><span><GlobalButton tooltipText="Milestone completed , move to next one.">Milestones</GlobalButton></span>
+            <FaFileAlt /><span><GlobalButton tooltipText="Check all milestones">Milestones</GlobalButton></span>
           </Link>
           <Link to="/" className="flex items-center space-x-2 hover:text-gray-300">
             <FaFileAlt /><span><GlobalButton tooltipText="To logout of portal">Logout</GlobalButton></span>
