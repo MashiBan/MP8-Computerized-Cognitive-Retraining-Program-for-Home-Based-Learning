@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kind❤️Mind
+
+### Computerized Cognitive Retraining Program For Home-Based Learning in Children with Special Abilities
+
+---
+
+## Introduction
+
+The Computerized Cognitive Retraining Program is a comprehensive, home-based learning solution designed specifically for children with special abilities. This software application provides personalized cognitive training activities to improve essential skills such as memory, attention, logical reasoning, and problem-solving.
+
+By utilizing adaptive learning algorithms, the system dynamically adjusts the difficulty of tasks based on each child's unique performance and learning pace, creating a customized and engaging learning experience tailored to their individual needs and abilities.
+
+---
+
+## Project Objectives
+
+* Deliver interactive, home-based cognitive training modules.
+* Support neurodiverse children through accessible and engaging learning content.
+* Monitor progress with performance analytics for caregivers and educators.
+* Provide a personalized learning path through AI-based adaptive difficulty.
+
+---
+
+## Demo and Preview
+
+- [Live Demo](https://kind-mind-lac.vercel.app)
+
+---
+
+## Tech Stack Used
+
+Frontend:
+
+* React.js / Next.js
+
+Backend:
+
+* Node.js with Express.js
+
+Database:
+
+* MongoDB or SQL using Prisma ORM
+
+Additional Tools:
+
+* Adaptive logic built using JavaScript/TypeScript
+* Hosting options: Vercel, Render, or Railway
+
+---
+
+## Key Features
+
+* Personalized training modules
+* Adaptive difficulty based on performance
+* Real-time progress tracking and visualization
+* Kid-friendly, accessible UI/UX design
+* Works across desktops, tablets, and mobile devices
+
+---
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the different repository:
+   <br/>
+   `git clone https://github.com/MashiBan/Cognitive-Backend-Current.git`
+    <br/>
+   `git clone https://github.com/MashiBan/Cognitive-frontend-current.git`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+3. Navigate to the project directory:
+   `cd Cognitive-Backend-Current`
+   `cd Cognitive-frontend-current`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Install dependencies:
+   `npm install`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+6. Start the development server:
+   `node index.js`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Contributors:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Hemant](https://github.com/hemant933)
+- [HariOm](https://github.com/hariom245)
+- [Mashi]()
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+We welcome contributions from developers, researchers, educators, and anyone passionate about inclusive learning technologies.
+
+Steps to contribute:
+
+1. Fork the repository.
+2. Create a new branch for your feature or fix:
+   `git checkout -b feature-name`
+3. Commit your changes:
+   `git commit -m "Add meaningful commit message"`
+4. Push your changes to your fork:
+   `git push origin feature-name`
+5. Open a pull request and briefly explain your contribution.
+
+Please follow clean code practices and comment your code where necessary.
+
+
